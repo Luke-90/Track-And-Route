@@ -2,60 +2,55 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Vehicle Tracker</title>
+  <title>Vehicle Tracker with GeoJSON Route</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
-
   <style>
     body { margin: 0; }
     #map { height: 100vh; }
   </style>
 </head>
 <body>
-
 <div id="map"></div>
 
-<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 
 <script>
-  // Initialize the map
-  var map = L.map('map').setView([52.6369, -1.1398], 13); // Example: Leicester
-
-  // Add OpenStreetMap tile layer
+  var map = L.map('map').setView([52.6369, -1.1398], 13);
+  
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '© OpenStreetMap contributors'
   }).addTo(map);
 
-  // Simulated vehicle position
+  // Add vehicle marker (initial dummy location)
   var vehicleMarker = L.marker([52.6369, -1.1398]).addTo(map)
     .bindPopup("Vehicle Location")
     .openPopup();
 
-  // Custom route (add your own GPS coordinates below)
-  var routeCoordinates = [
-    [52.6369, -1.1398],
-    [52.6375, -1.1350],
-    [52.6400, -1.1300]
-  ];
+  // Load route from GeoJSON file
+  fetch('route.geojson')
+    .then(response => response.json())
+    .then(data => {
+      var route = L.geoJSON(data, {
+        style: { color: 'blue', weight: 4 }
+      }).addTo(map);
 
-  var routeLine = L.polyline(routeCoordinates, {color: 'blue'}).addTo(map);
+      map.fitBounds(route.getBounds());
 
-  // Fit map to route
-  map.fitBounds(routeLine.getBounds());
-
-  // Simulate movement (can be replaced by real GPS update)
-  let i = 0;
-  setInterval(() => {
-    if (i < routeCoordinates.length) {
-      vehicleMarker.setLatLng(routeCoordinates[i]);
-      i++;
-    }
-  }, 2000);
+      // Simulate moving vehicle along the route
+      var coords = data.geometry.coordinates.map(c => [c[1], c[0]]);
+      let i = 0;
+      setInterval(() => {
+        if (i < coords.length) {
+          vehicleMarker.setLatLng(coords[i]);
+          i++;
+        }
+      }, 2000);
+    })
+    .catch(err => console.error('Failed to load GeoJSON:', err));
 </script>
 
 </body>
 </html>
+
